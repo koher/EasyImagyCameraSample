@@ -9,8 +9,12 @@ class ViewController: UIViewController {
     private var imageQueue: ArraySlice<Image<UInt8>> = []
     private static let maxQueueCount = 3
     
+    private weak var delegate: Delegate?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        self.delegate = self
 
         guard let device = AVCaptureDevice.default(for: .video) else {
             fatalError("No camera device found.")
@@ -83,12 +87,22 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
                 $0.copyBytes(from: pointer)
             }
         }
-        
-        image.update { $0 ^= 0xff }
+
+        delegate?.didReceiveImage(&image)
         previewView.nextImage = image
         
         imageQueue.append(image)
     }
+}
+
+extension ViewController: Delegate {
+    func didReceiveImage(_ image: inout Image<UInt8>) {
+        image.update { $0 ^= 0xff }
+    }
+}
+
+protocol Delegate: AnyObject {
+    func didReceiveImage(_ image: inout Image<UInt8>)
 }
 
 class PreviewView: UIView {
