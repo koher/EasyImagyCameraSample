@@ -68,13 +68,11 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
         let height = CVPixelBufferGetHeight(imageBuffer)
 
         var image: Image<UInt8>
-        if imageQueue.count >= ViewController.maxQueueCount, let first = imageQueue.popFirst() {
+        if imageQueue.count >= ViewController.maxQueueCount, let first = imageQueue.popFirst(),
+            first.width == width, first.height == height {
             image = first
         } else {
             image = Image(width: width, height: height, pixel: 0)
-        }
-        if image.width != width || image.height != height {
-            image = Image<UInt8>(width: width, height: height, pixel: 0)
         }
         
         do {
@@ -106,7 +104,7 @@ protocol Delegate: AnyObject {
 }
 
 class PreviewView: UIView {
-    var nextImage: Image<UInt8>? { didSet { DispatchQueue.main.async { self.setNeedsDisplay() } } }
+    var nextImage: Image<UInt8>? { didSet { DispatchQueue.main.async { [weak self] in self?.setNeedsDisplay() } } }
     
     override func draw(_ rect: CGRect) {
         guard let context = UIGraphicsGetCurrentContext() else { return }
