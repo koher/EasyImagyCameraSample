@@ -75,7 +75,7 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
             image = Image(width: width, height: height, pixel: 0)
         }
         
-        do {
+        synchronized(with: previewView.lock) {
             CVPixelBufferLockBaseAddress(imageBuffer, .readOnly)
             defer { CVPixelBufferUnlockBaseAddress(imageBuffer, .readOnly) }
             
@@ -104,6 +104,8 @@ protocol Delegate: AnyObject {
 }
 
 class PreviewView: UIView {
+    let lock = NSLock()
+    
     var nextImage: Image<UInt8>? { didSet { DispatchQueue.main.async { [weak self] in self?.setNeedsDisplay() } } }
     
     override func draw(_ rect: CGRect) {
@@ -123,9 +125,17 @@ class PreviewView: UIView {
 
         context.translateBy(x: 0, y: frame.size.height)
         context.scaleBy(x: 1, y: -1)
-        image.withCGImage { cgImage in
-            context.draw(cgImage, in: rect)
+        
+        synchronized(with: lock) {
+            image.withCGImage { cgImage in
+                context.draw(cgImage, in: rect)
+            }
         }
     }
 }
 
+private func synchronized(with lock: NSLock, _ operation: () -> ()) {
+    lock.lock()
+    defer { lock.unlock() }
+    operation()
+}
