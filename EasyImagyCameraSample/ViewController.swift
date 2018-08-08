@@ -82,7 +82,7 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
             let baseAddress = CVPixelBufferGetBaseAddressOfPlane(imageBuffer, 0)!
             let pointer = UnsafeRawBufferPointer(start: baseAddress, count: image.count)
             image.withUnsafeMutableBytes {
-                $0.copyBytes(from: pointer)
+                $0.copyMemory(from: pointer)
             }
         }
 
